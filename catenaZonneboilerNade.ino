@@ -24,6 +24,9 @@ const char* mqtt_server = "jimmak.nl";
 
 long lastReconnectAttempt = 0;
 
+unsigned long vorig = 0;
+const long interval = 300000;
+
 readNodeData sensoren[3] = {readNodeData("zonneboiler", "onder",  "temp", zonneBoilerOnder, sensors),
                             readNodeData("zonneboiler", "midden", "temp", zonneBoilerMidden, sensors),
                             readNodeData("zonneboiler", "boven",  "temp", zonneBoilerBoven, sensors)};
@@ -62,7 +65,7 @@ void setup_wifi() {
 void setup(void){
   // start serial port
   Serial.begin(9600);
-  Serial.println("Catena - zonneboiler - node - v0.1");
+  Serial.println("Catena - zonneboiler - node - v0.2");
 
   // Start up the library
   sensors.begin();
@@ -86,13 +89,16 @@ void loop(void) {
       }
     }
   } else {
-    for (int i = 0; i < 3; i++){
-      char msg[10];
-      dtostrf(sensoren[i].returnTemp(), 5, 2, msg);
-      client.publish(sensoren[i].prepareMqttChannel(),msg);
-      Serial.println(msg);
-    }
+    long nu = millis();
+    if (nu - vorig >= interval){
+      vorig = nu;
+      for (int i = 0; i < 3; i++){
+        char msg[10];
+        dtostrf(sensoren[i].returnTemp(), 5, 2, msg);
+        client.publish(sensoren[i].prepareMqttChannel(),msg);
+        Serial.println(msg);
+      }
 
-  delay(60000);
+    }
   }
 }
